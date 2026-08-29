@@ -25,6 +25,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserCheck,
+  Plus,
+  Users,
   LockKeyhole,
   Flag,
   Ban,
@@ -44,6 +46,7 @@ import {
 const missions = [
   {
     id: 1,
+    ownerId: 'ananya',
     title: 'Build a launch story for a climate startup',
     company: 'Aether Labs',
     category: 'Design',
@@ -54,6 +57,7 @@ const missions = [
   },
   {
     id: 2,
+    ownerId: 'rahul',
     title: 'Map the future of campus mobility',
     company: 'NIT Trichy Innovation Cell',
     category: 'Research',
@@ -64,6 +68,7 @@ const missions = [
   },
   {
     id: 3,
+    ownerId: 'meera',
     title: 'Ship a scrappy AI study companion',
     company: 'StudySync',
     category: 'Build',
@@ -74,6 +79,7 @@ const missions = [
   },
   {
     id: 4,
+    ownerId: 'ananya',
     title: 'Write the manifesto for mindful tech',
     company: 'Good Signal',
     category: 'Writing',
@@ -84,6 +90,7 @@ const missions = [
   },
   {
     id: 5,
+    ownerId: 'meera',
     title: 'Design the annual cultural fest identity',
     company: 'NIT Cultural Council',
     category: 'Design',
@@ -94,6 +101,7 @@ const missions = [
   },
   {
     id: 6,
+    ownerId: 'ananya',
     title: 'Build a landing page for a student startup',
     company: 'Forge Founders',
     category: 'Build',
@@ -104,6 +112,7 @@ const missions = [
   },
   {
     id: 7,
+    ownerId: 'rahul',
     title: 'Photograph the Monsoon Music Night',
     company: 'Campus Arts Collective',
     category: 'Photography',
@@ -114,6 +123,7 @@ const missions = [
   },
   {
     id: 8,
+    ownerId: 'meera',
     title: 'Help first-years prepare for calculus',
     company: 'Student Learning Circle',
     category: 'Tutoring',
@@ -217,6 +227,7 @@ const nav = [
   ['messages', 'Messages', MessageSquare],
   ['insights', 'Campus Insights', TrendingUp],
   ['business', 'For Business', BriefcaseBusiness],
+  ['posts', 'My Posts', Target],
 ] as const
 
 function Pill({
@@ -260,27 +271,41 @@ export default function StormforgeApp() {
   const [profile, setProfile] = useState('Ananya')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
-  const [selected, setSelected] = useState<(typeof missions)[number] | null>(
-    null
-  )
-  const [applied, setApplied] = useState<number[]>([])
+  const [selected, setSelected] = useState<(typeof missions)[number] | null>(null)
+  const [applicationsByMission, setApplicationsByMission] = useState<Record<number, string[]>>({
+    6: ['rahul', 'meera'],
+  })
+  const [acceptedByMission, setAcceptedByMission] = useState<Record<number, string>>({})
   const [completed, setCompleted] = useState<number[]>([])
-  const [forgeScore, setForgeScore] = useState(92)
-  const [workspaceStep, setWorkspaceStep] = useState<
-    'working' | 'submitted' | 'reviewed'
-  >('working')
+  const [forgeScores, setForgeScores] = useState<Record<string, number>>({ ananya: 92, rahul: 87, meera: 84 })
+  const [workspaceStep, setWorkspaceStep] = useState<'working' | 'submitted' | 'reviewed'>('working')
   const [toast, setToast] = useState('')
   const [showMenu, setShowMenu] = useState(false)
+  const [showPersonaMenu, setShowPersonaMenu] = useState(false)
+  const [postedMissions, setPostedMissions] = useState<(typeof missions)[number][]>([])
+  const [selectedForgeProfile, setSelectedForgeProfile] = useState<string | null>(null)
+
+  const allMissions = useMemo(() => [...missions, ...postedMissions], [postedMissions])
+  const currentUserId = profile === 'Ananya' ? 'ananya' : profile === 'Rahul' ? 'rahul' : 'meera'
+  const forgeScore = forgeScores[currentUserId] ?? 80
+  const applied = useMemo(
+    () => allMissions.filter((mission) => (applicationsByMission[mission.id] ?? []).includes(currentUserId)).map((mission) => mission.id),
+    [allMissions, applicationsByMission, currentUserId]
+  )
+  const accepted = useMemo(
+    () => allMissions.filter((mission) => acceptedByMission[mission.id] === currentUserId).map((mission) => mission.id),
+    [allMissions, acceptedByMission, currentUserId]
+  )
 
   const filtered = useMemo(() => {
-    return missions.filter(
+    return allMissions.filter(
       (mission) =>
         (category === 'All' || mission.category === category) &&
         `${mission.title} ${mission.company} ${mission.tags.join(' ')}`
           .toLowerCase()
           .includes(query.toLowerCase())
     )
-  }, [category, query])
+  }, [allMissions, category, query])
 
   const notify = (message: string) => {
     setToast(message)
@@ -291,21 +316,67 @@ export default function StormforgeApp() {
   }
 
   const apply = (id: number) => {
-    setApplied((prev) =>
-      prev.includes(id) ? prev : [...prev, id]
-    )
+    const mission = allMissions.find((item) => item.id === id)
+    if (mission?.ownerId === currentUserId) {
+      notify('You posted this mission. Switch to another student to apply.')
+      return
+    }
+
+    setApplicationsByMission((prev) => {
+      const existing = prev[id] ?? []
+      if (existing.includes(currentUserId)) return prev
+      return { ...prev, [id]: [...existing, currentUserId] }
+    })
 
     setSelected(null)
-    notify('Mission added to your active forge.')
+    notify('Application sent. The mission owner will review your Forge.')
   }
 
   const openWorkspace = (mission: (typeof missions)[number]) => {
-  setWorkspaceStep(
-    completed.includes(mission.id) ? 'reviewed' : 'working'
-  )
+    if (!accepted.includes(mission.id)) {
+      notify('Workspace unlocks when the mission owner accepts your application.')
+      return
+    }
 
-  setSelected(null)
-  setView('workspace')
+    setWorkspaceStep(
+      completed.includes(mission.id) ? 'reviewed' : 'working'
+    )
+    setSelected(null)
+    setView('workspace')
+  }
+
+  const acceptApplicant = (missionId: number, applicantId: string) => {
+    setAcceptedByMission((prev) => ({ ...prev, [missionId]: applicantId }))
+    setWorkspaceStep('working')
+    const applicantName = applicantId === 'ananya' ? 'Ananya Sharma' : applicantId === 'rahul' ? 'Rahul Kumar' : 'Meera Nair'
+    notify(`${applicantName} selected. Mission workspace is now unlocked.`)
+  }
+
+  const createPost = (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => {
+    const nextId = Math.max(...allMissions.map((mission) => mission.id)) + 1
+    const newMission = {
+      id: nextId,
+      title: post.title,
+      company: `${profile} · Student request`,
+      ownerId: currentUserId,
+      category: post.category,
+      reward: post.reward,
+      time: post.time,
+      tags: post.tags,
+      hot: true,
+    }
+
+    setPostedMissions((prev) => [...prev, newMission])
+    setView('posts')
+    notify('Mission posted. Students can now apply.')
+  }
+
+  const switchPersona = (nextProfile: string) => {
+    setProfile(nextProfile)
+    setShowPersonaMenu(false)
+    setSelected(null)
+    setView('home')
+    notify(`Previewing as ${nextProfile}.`)
   }
 
   return (
@@ -415,22 +486,42 @@ export default function StormforgeApp() {
               <i />
             </button>
 
-            <button
-              className="user-chip"
-              onClick={() =>
-                setProfile(
-                  profile === 'Ananya' ? 'Rohit' : 'Ananya'
-                )
-              }
-            >
-              <div className="avatar small">
-                {profile[0]}
-              </div>
+            <div className="persona-wrap">
+              <button
+                className="user-chip"
+                onClick={() => setShowPersonaMenu((value) => !value)}
+              >
+                <div className="avatar small">
+                  {profile[0]}
+                </div>
+                <span>{profile}</span>
+                <ChevronRight size={15} />
+              </button>
 
-              <span>{profile}</span>
-
-              <ChevronRight size={15} />
-            </button>
+              {showPersonaMenu && (
+                <div className="persona-menu">
+                  <div className="persona-menu-title">PROTOTYPE PERSONAS</div>
+                  {[
+                    ['Ananya', 'Student · Can post + apply'],
+                    ['Rahul', 'Student · Can post + apply'],
+                    ['Meera', 'Student · Can post + apply'],
+                  ].map(([name, role]) => (
+                    <button
+                      key={name}
+                      className={profile === name ? 'persona-option active' : 'persona-option'}
+                      onClick={() => switchPersona(name)}
+                    >
+                      <div className="avatar mini">{name[0]}</div>
+                      <div>
+                        <strong>{name}</strong>
+                        <span>{role}</span>
+                      </div>
+                      {profile === name && <ShieldCheck size={14} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -455,7 +546,7 @@ export default function StormforgeApp() {
           {view === 'home' && (
             <HomeView
               profile={profile}
-              applied={applied}
+              applied={[...applied, ...accepted]}
               forgeScore={forgeScore}
               onView={setView}
               onOpen={setSelected}
@@ -469,7 +560,7 @@ export default function StormforgeApp() {
               setCategory={setCategory}
               query={query}
               setQuery={setQuery}
-              applied={applied}
+              applied={[...applied, ...accepted]}
               onOpen={setSelected}
             />
           )}
@@ -482,9 +573,9 @@ export default function StormforgeApp() {
 
           {view === 'work' && (
             <WorkView
+              accepted={accepted}
               applied={applied}
-              onOpen={setSelected}
-              onOpenWorkspace={openWorkspace}
+              onOpen={openWorkspace}
               onView={setView}
             />
           )}
@@ -493,15 +584,21 @@ export default function StormforgeApp() {
             <WorkspaceView
               mission={
                 selected ??
-                missions.find((mission) => applied.includes(mission.id)) ??
-                missions[0]
+                allMissions.find((mission) => accepted.includes(mission.id)) ??
+                allMissions.find((mission) => applied.includes(mission.id)) ??
+                allMissions[0]
               }
               step={workspaceStep}
               onStepChange={setWorkspaceStep}
               onComplete={() => {
-                if (!completed.includes(selected.id)) {
-                  setCompleted((prev) => [...prev, selected.id])
-                  setForgeScore((prev) => Math.min(100, prev + 3))
+                const missionId =
+                  selected?.id ??
+                  allMissions.find((mission) => accepted.includes(mission.id))?.id ??
+                  allMissions[0].id
+
+                if (!completed.includes(missionId)) {
+                  setCompleted((prev) => [...prev, missionId])
+                  setForgeScores((prev) => ({ ...prev, [currentUserId]: Math.min(100, (prev[currentUserId] ?? 80) + 3) }))
                 }
 
                 setWorkspaceStep('reviewed')
@@ -532,6 +629,18 @@ export default function StormforgeApp() {
           {view === 'insights' && <InsightsView />}
 
           {view === 'business' && <BusinessView onNotify={notify} />}
+
+          {view === 'posts' && (
+            <MyPostsView
+              posts={allMissions.filter((mission) => mission.ownerId === currentUserId)}
+              applicationsByMission={applicationsByMission}
+              acceptedByMission={acceptedByMission}
+              onAccept={acceptApplicant}
+              onCreatePost={createPost}
+              onNotify={notify}
+              onViewForge={setSelectedForgeProfile}
+            />
+          )}
 
           {view === 'messages' && (
             <SimpleView
@@ -650,24 +759,40 @@ export default function StormforgeApp() {
               ))}
             </div>
 
-            <button
-              className="primary-button full"
-              onClick={() => {
-                if (applied.includes(selected.id)) {
-                  openWorkspace(selected)
-                } else {
-                  apply(selected.id)
-                }
-              }}
-            >
-              {applied.includes(selected.id)
-                ? 'Open workspace'
-                : 'Take this mission'}
-
-              <ChevronRight size={16} />
-            </button>
+            {accepted.includes(selected.id) ? (
+              <button
+                className="primary-button full"
+                onClick={() => openWorkspace(selected)}
+              >
+                Open workspace
+                <ChevronRight size={16} />
+              </button>
+            ) : applied.includes(selected.id) ? (
+              <button
+                className="secondary-button full application-pending"
+                onClick={() => notify('Application pending. The poster is reviewing applicants.')}
+              >
+                <Clock3 size={15} />
+                Application sent · Awaiting selection
+              </button>
+            ) : (
+              <button
+                className="primary-button full"
+                onClick={() => apply(selected.id)}
+              >
+                Apply for mission
+                <ChevronRight size={16} />
+              </button>
+            )}
           </section>
         </div>
+      )}
+
+      {selectedForgeProfile && (
+        <ForgeProfileModal
+          applicantId={selectedForgeProfile}
+          onClose={() => setSelectedForgeProfile(null)}
+        />
       )}
 
       {toast && (
@@ -1109,58 +1234,70 @@ function MissionBoard({
    ========================================================= */
 
 function WorkView({
+  accepted,
   applied,
   onOpen,
-  onOpenWorkspace,
   onView,
 }: {
+  accepted: number[]
   applied: number[]
   onOpen: (m: (typeof missions)[number]) => void
-  onOpenWorkspace: (m: (typeof missions)[number]) => void
   onView: (v: string) => void
 }) {
   const active = missions.filter((m) =>
-    applied.includes(m.id)
+    accepted.includes(m.id)
+  )
+
+  const pending = missions.filter((m) =>
+    applied.includes(m.id) && !accepted.includes(m.id)
   )
 
   return (
     <>
       <div className="page-title">
         <div>
-          <p className="kicker">YOUR ACTIVE QUESTS</p>
+          <p className="kicker">YOUR WORK QUEUE</p>
           <h1>My Missions</h1>
-          <p>
-            Small teams. Real stakes. Work you can point to.
-          </p>
+          <p>Accepted work opens a protected workspace. Applications stay pending until the poster chooses you.</p>
         </div>
 
-        <button
-          className="primary-button"
-          onClick={() => onView('missions')}
-        >
-          Find another mission
-        </button>
+        <div className="work-header-actions">
+          <button
+            className="secondary-button"
+            onClick={() => onView('posts')}
+          >
+            <Target size={15} />
+            View my posts
+          </button>
+          <button
+            className="primary-button"
+            onClick={() => onView('missions')}
+          >
+            Find another mission
+          </button>
+        </div>
       </div>
 
-      {active.length === 0 ? (
+      {active.length === 0 && pending.length === 0 ? (
         <SimpleView
           icon={BriefcaseBusiness}
           title="Your forge is ready"
-          copy="Accept a mission from the board and it will appear here with a focused workspace and delivery checklist."
+          copy="Apply for a mission. Once the poster accepts you, the protected workspace will appear here."
           action="Browse missions"
           onClick={() => onView('missions')}
         />
       ) : (
-        <div className="work-list">
+        <>
+        {active.length > 0 && <div className="work-list">
           {active.map((mission) => (
             <button
               className="work-row"
               key={mission.id}
-              onClick={() => onOpenWorkspace(mission)}
+              onClick={() => onOpen(mission)}
             >
               <div className="work-status">
                 <span className="status-pulse" />
-                IN PROGRESS
+                ACCEPTED · IN PROGRESS
               </div>
 
               <div>
@@ -1182,6 +1319,309 @@ function WorkView({
               <ChevronRight size={18} />
             </button>
           ))}
+        </div>}
+
+        {pending.length > 0 && (
+          <div className="pending-applications">
+            <div className="section-heading compact">
+              <div>
+                <p className="eyebrow">AWAITING SELECTION</p>
+                <h2>Your applications</h2>
+              </div>
+              <Pill tone="gold">{pending.length} pending</Pill>
+            </div>
+
+            <div className="work-list">
+              {pending.map((mission) => (
+                <div className="work-row pending-row" key={mission.id}>
+                  <div className="work-status pending-status">
+                    <Clock3 size={13} />
+                    APPLICATION SENT
+                  </div>
+                  <div>
+                    <h3>{mission.title}</h3>
+                    <p>{mission.company}</p>
+                  </div>
+                  <div className="applicant-count">
+                    <strong>18 applicants</strong>
+                    <span>Poster is reviewing Forge profiles</span>
+                  </div>
+                  <ChevronRight size={18} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        </>
+      )}
+    </>
+  )
+}
+
+/* =========================================================
+   MY POSTS — POSTER SIDE
+   ========================================================= */
+
+const demoApplicants = [
+  {
+    id: 'ananya',
+    name: 'Ananya Sharma',
+    initials: 'A',
+    score: 92,
+    rating: '4.9',
+    missions: 6,
+    skills: ['React', 'Next.js', 'UI Design'],
+    verified: true,
+    fit: '98% fit',
+  },
+  {
+    id: 'rahul',
+    name: 'Rahul Kumar',
+    initials: 'R',
+    score: 87,
+    rating: '4.7',
+    missions: 4,
+    skills: ['React', 'Figma', 'Web'],
+    verified: true,
+    fit: '91% fit',
+  },
+  {
+    id: 'meera',
+    name: 'Meera Nair',
+    initials: 'M',
+    score: 84,
+    rating: '4.8',
+    missions: 5,
+    skills: ['Branding', 'Figma', 'Motion'],
+    verified: true,
+    fit: '88% fit',
+  },
+]
+
+function MyPostsView({
+  posts,
+  applicationsByMission,
+  acceptedByMission,
+  onAccept,
+  onCreatePost,
+  onNotify,
+  onViewForge,
+}: {
+  posts: typeof missions
+  applicationsByMission: Record<number, string[]>
+  acceptedByMission: Record<number, string>
+  onAccept: (missionId: number, applicantId: string) => void
+  onCreatePost: (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => void
+  onNotify: (message: string) => void
+  onViewForge: (applicantId: string) => void
+}) {
+  const [showComposer, setShowComposer] = useState(false)
+  const [title, setTitle] = useState('')
+  const [reward, setReward] = useState('300')
+  const [deadline, setDeadline] = useState('Today')
+  const [category, setCategory] = useState('Design')
+
+  const submitPost = () => {
+    if (!title.trim()) {
+      onNotify('Add a short title before posting the mission.')
+      return
+    }
+
+    onCreatePost({
+      title: title.trim(),
+      reward: Number(reward) || 300,
+      time: deadline,
+      category,
+      tags: category === 'Design' ? ['Figma', 'Design'] : [category, 'Campus'],
+    })
+
+    setTitle('')
+    setReward('300')
+    setDeadline('Today')
+    setCategory('Design')
+    setShowComposer(false)
+  }
+
+  return (
+    <>
+      <div className="page-title">
+        <div>
+          <p className="kicker">THE POSTER SIDE</p>
+          <h1>My Posts</h1>
+          <p>Post a need. Compare trusted applicants. Choose who moves the work forward.</p>
+        </div>
+
+        <button className="primary-button" onClick={() => setShowComposer(true)}>
+          <Plus size={15} />
+          Post a mission request
+        </button>
+      </div>
+
+      {posts.map((post) => {
+        const postApplicants = (applicationsByMission[post.id] ?? [])
+          .map((id) => demoApplicants.find((applicant) => applicant.id === id))
+          .filter(Boolean)
+        const selectedId = acceptedByMission[post.id]
+
+        return (
+          <div className="poster-post-block" key={post.id}>
+            <div className="poster-request panel">
+              <div className="poster-request-top">
+                <div>
+                  <Pill tone="gold">OPEN · ACCEPTING APPLICATIONS</Pill>
+                  <h2>{post.title}</h2>
+                  <p>{post.company} · ₹{post.reward.toLocaleString()} · {post.time}</p>
+                </div>
+                <div className="poster-request-count">
+                  <strong>{postApplicants.length}</strong>
+                  <span>applicants</span>
+                </div>
+              </div>
+
+              <div className="poster-request-meta">
+                <div><span>POSTED</span><strong>Today</strong></div>
+                <div><span>DEADLINE</span><strong>{post.time}</strong></div>
+                <div><span>APPLICANTS</span><strong>{postApplicants.length}</strong></div>
+                <div><span>SMART MATCH</span><strong>Enabled</strong></div>
+              </div>
+            </div>
+
+            <div className="section-heading compact poster-heading">
+              <div>
+                <p className="eyebrow">APPLICANT FORGE PROFILES</p>
+                <h2>Choose the person, not the first click.</h2>
+              </div>
+              <Pill tone="green"><ShieldCheck size={12} /> Campus verified</Pill>
+            </div>
+
+            {postApplicants.length === 0 ? (
+              <div className="panel empty-applicants">
+                <Users size={18} />
+                <div>
+                  <strong>Waiting for applicants</strong>
+                  <span>Students will appear here as they apply.</span>
+                </div>
+              </div>
+            ) : (
+              <div className="applicant-grid">
+                {postApplicants.map((applicant) => {
+                  if (!applicant) return null
+                  const selected = selectedId === applicant.id
+
+                  return (
+                    <div className={`applicant-card ${selected ? 'applicant-selected' : ''}`} key={applicant.id}>
+                      <div className="applicant-top">
+                        <div className="avatar applicant-avatar">{applicant.initials}</div>
+                        <Pill tone="gold">{applicant.fit}</Pill>
+                      </div>
+
+                      <h3>{applicant.name}</h3>
+
+                      <div className="applicant-score">
+                        <strong>{applicant.score}</strong>
+                        <span>Forge Score</span>
+                      </div>
+
+                      <div className="applicant-proof">
+                        <span>★ {applicant.rating} rating</span>
+                        <span>{applicant.missions} verified missions</span>
+                      </div>
+
+                      <div className="applicant-skills">
+                        {applicant.skills.map((skill) => <Pill key={skill}>{skill}</Pill>)}
+                      </div>
+
+                      <div className="applicant-actions">
+                        <button className="secondary-button" onClick={() => onViewForge(applicant.id)}>
+                          View Forge
+                        </button>
+
+                        {selected ? (
+                          <button className="primary-button" onClick={() => onNotify('Mission workspace is unlocked for this applicant.')}>
+                            Selected ✓
+                          </button>
+                        ) : (
+                          <button className="primary-button" onClick={() => onAccept(post.id, applicant.id)}>
+                            Select applicant
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      <div className="poster-trust-strip">
+        <ShieldCheck size={18} />
+        <div>
+          <strong>Stormforge helps posters choose with evidence.</strong>
+          <span>Compare verified identity, Forge Score, ratings, skills and completed work before accepting an applicant.</span>
+        </div>
+      </div>
+
+      {showComposer && (
+        <div className="modal-backdrop" onClick={() => setShowComposer(false)}>
+          <section className="post-composer" onClick={(event) => event.stopPropagation()}>
+            <button className="close" onClick={() => setShowComposer(false)} aria-label="Close">
+              <X size={18} />
+            </button>
+
+            <Pill tone="gold"><Target size={12} /> NEW MISSION REQUEST</Pill>
+            <h2>What do you need done?</h2>
+            <p>Post the need. Let multiple students apply. Choose the strongest fit.</p>
+
+            <label>
+              <span>MISSION TITLE</span>
+              <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Design a poster for cultural fest" />
+            </label>
+
+            <div className="composer-grid">
+              <label>
+                <span>REWARD</span>
+                <input type="number" min="50" value={reward} onChange={(event) => setReward(event.target.value)} />
+              </label>
+
+              <label>
+                <span>DEADLINE</span>
+                <select value={deadline} onChange={(event) => setDeadline(event.target.value)}>
+                  <option>Within 2 hours</option>
+                  <option>Today</option>
+                  <option>Tomorrow</option>
+                  <option>3 days</option>
+                  <option>7 days</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              <span>CATEGORY</span>
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                <option>Design</option>
+                <option>Build</option>
+                <option>Tutoring</option>
+                <option>Photography</option>
+                <option>Writing</option>
+                <option>Errands</option>
+              </select>
+            </label>
+
+            <div className="composer-preview">
+              <Sparkles size={15} />
+              <div>
+                <strong>Smart Match will recommend your request</strong>
+                <span>Relevant campus makers will see the opportunity and can apply.</span>
+              </div>
+            </div>
+
+            <button className="primary-button full" onClick={submitPost}>
+              <Plus size={16} />
+              Post mission request
+            </button>
+          </section>
         </div>
       )}
     </>
@@ -1209,7 +1649,7 @@ function ForgeView({
         <div className="profile-identity">
           <p className="kicker">THE MAKER PROFILE</p>
 
-          <h1>{profile} Sharma</h1>
+          <h1>{profile === 'Ananya' ? 'Ananya Sharma' : profile === 'Rahul' ? 'Rahul Kumar' : profile === 'Meera' ? 'Meera Nair' : 'Campus Arts Collective'}</h1>
 
           <p>
             Product designer · NIT Trichy · Chennai, India
@@ -2559,3 +2999,87 @@ function SimpleView({
 }
 
 export { missions }
+
+/* =========================================================
+   FORGE PROFILE PREVIEW
+   ========================================================= */
+
+function ForgeProfileModal({
+  applicantId,
+  onClose,
+}: {
+  applicantId: string
+  onClose: () => void
+}) {
+  const applicant = demoApplicants.find((item) => item.id === applicantId)
+
+  if (!applicant) return null
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="forge-preview-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          className="modal-close"
+          onClick={onClose}
+          aria-label="Close Forge profile"
+        >
+          <X size={17} />
+        </button>
+
+        <div className="forge-preview-top">
+          <div className="avatar giant">{applicant.initials}</div>
+          <div>
+            <p className="kicker">VERIFIED MAKER</p>
+            <h2>{applicant.name}</h2>
+            <p>
+              Campus-verified student · Available for campus work
+            </p>
+          </div>
+        </div>
+
+        <div className="forge-preview-stats">
+          <div>
+            <span>FORGE SCORE</span>
+            <strong>{applicant.score}</strong>
+          </div>
+          <div>
+            <span>RATING</span>
+            <strong>★ {applicant.rating}</strong>
+          </div>
+          <div>
+            <span>VERIFIED WORK</span>
+            <strong>{applicant.missions}</strong>
+          </div>
+        </div>
+
+        <div className="forge-preview-section">
+          <p className="eyebrow">SKILLS</p>
+          <div className="tag-row">
+            {applicant.skills.map((skill) => (
+              <Pill key={skill}>{skill}</Pill>
+            ))}
+          </div>
+        </div>
+
+        <div className="forge-proof-card">
+          <ShieldCheck size={18} />
+          <div>
+            <strong>Trust signals verified</strong>
+            <span>
+              College identity, completed work and client ratings are visible
+              before you choose an applicant.
+            </span>
+          </div>
+        </div>
+
+        <button className="primary-button full" onClick={onClose}>
+          Back to applicants
+          <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  )
+}

@@ -904,3 +904,390 @@ nav { display: grid; gap: 5px; }.nav-item { border: 0; background: transparent; 
 
 @media(max-width:900px){.forge-layout,.workspace-grid,.business-grid{grid-template-columns:1fr}.reputation-flow{overflow-x:auto;justify-content:flex-start;padding-bottom:8px}.business-kpis{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.score-breakdown{grid-template-columns:1fr}.verified-work{grid-template-columns:58px minmax(0,1fr)}.portfolio-art{width:58px;height:58px}.work-reward{grid-column:2;align-items:flex-start;margin-top:-5px}.workspace-title{align-items:flex-start;flex-direction:column}.workspace-reward{align-items:flex-start}.workspace-steps{grid-template-columns:1fr 1fr}.business-kpis{grid-template-columns:1fr}.model-row{grid-template-columns:1fr;gap:5px}}
+
+/* =========================================================
+   FINAL MARKETPLACE FLOW — APPLICATIONS + POSTER SIDE
+   ========================================================= */
+.work-header-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.application-pending{color:#9bb4ff!important;border-color:rgba(155,180,255,.25)!important;background:rgba(155,180,255,.04)!important}.pending-applications{margin-top:22px}.pending-row{cursor:default!important;grid-template-columns:145px minmax(0,1fr) minmax(180px,.7fr) auto!important}.pending-status{color:#9bb4ff!important}.pending-status svg{color:#9bb4ff}.applicant-count{display:flex;flex-direction:column;gap:3px;text-align:right}.applicant-count strong{color:#dfe5ed;font-size:11px}.applicant-count span{color:#737f92;font-size:9px}.poster-request{margin-top:5px;padding:22px}.poster-request-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.poster-request-top h2{margin:12px 0 6px!important}.poster-request-top p{margin:0;color:#7f8b9e;font-size:11px}.poster-request-count{min-width:95px;padding:12px;border:1px solid rgba(245,185,66,.14);border-radius:10px;background:rgba(245,185,66,.035);text-align:center}.poster-request-count strong{display:block;color:#f5b942;font:26px Georgia,serif}.poster-request-count span{display:block;margin-top:3px;color:#788397;font-size:8px;line-height:1.4}.poster-request-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}.poster-request-meta div{display:flex;flex-direction:column;gap:4px}.poster-request-meta span{color:#5f6a7c;font-size:8px;letter-spacing:.12em;font-weight:700}.poster-request-meta strong{color:#dfe5ed;font-size:10px}.poster-heading{margin-top:34px}.applicant-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.applicant-card{position:relative;padding:17px;border:1px solid var(--border);border-radius:11px;background:linear-gradient(145deg,#122137,#0d1827);transition:border-color .2s,transform .2s,box-shadow .2s}.applicant-card:hover{transform:translateY(-2px);border-color:#5a4b2e}.applicant-selected{border-color:rgba(98,221,166,.5)!important;box-shadow:0 0 0 1px rgba(98,221,166,.1),0 15px 40px rgba(0,0,0,.2)}.applicant-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.applicant-avatar{width:40px;height:40px;font-size:14px}.applicant-card h3{margin:14px 0 9px;font:500 18px Georgia,serif}.applicant-score{display:flex;align-items:baseline;gap:7px}.applicant-score strong{color:#f5b942;font:24px Georgia,serif}.applicant-score span{color:#727e91;font-size:9px}.applicant-proof{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;color:#8290a2;font-size:9px}.applicant-proof span:first-child{color:#f5b942}.applicant-skills{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;min-height:27px}.applicant-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:17px}.applicant-actions .secondary-button,.applicant-actions .primary-button{justify-content:center;padding:9px 8px;font-size:10px}.poster-trust-strip{display:flex;align-items:center;gap:11px;margin-top:22px;padding:14px 16px;border:1px solid rgba(98,221,166,.12);border-radius:10px;background:rgba(98,221,166,.025);color:#62dda6}.poster-trust-strip div{display:flex;flex-direction:column;gap:3px}.poster-trust-strip strong{color:#dce5e1;font-size:11px}.poster-trust-strip span{color:#7d8c84;font-size:9px;line-height:1.5}
+
+@media(max-width:900px){.applicant-grid{grid-template-columns:1fr 1fr}.poster-request-meta{grid-template-columns:1fr 1fr}.pending-row{grid-template-columns:1fr!important;gap:9px}.applicant-count{text-align:left}.work-header-actions{justify-content:flex-end}}
+@media(max-width:640px){.poster-request-top{flex-direction:column}.poster-request-count{align-self:flex-start}.applicant-grid{grid-template-columns:1fr}.work-header-actions{width:100%}.work-header-actions button{flex:1}.applicant-actions{grid-template-columns:1fr}}
+
+/* =========================================================
+   STORMFORGE — FINAL MULTI-USER MARKETPLACE
+   ========================================================= */
+
+.persona-wrap {
+  position: relative;
+}
+
+.persona-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 80;
+  width: 285px;
+  padding: 9px;
+  border: 1px solid rgba(245,185,66,.18);
+  border-radius: 14px;
+  background: rgba(8,14,25,.98);
+  box-shadow: 0 25px 70px rgba(0,0,0,.55);
+  backdrop-filter: blur(18px);
+}
+
+.persona-menu-title {
+  padding: 8px 10px 9px;
+  color: #68758a;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.persona-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 31px minmax(0,1fr) 15px;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #8a96a8;
+  text-align: left;
+  cursor: pointer;
+}
+
+.persona-option:hover,
+.persona-option.active {
+  background: rgba(245,185,66,.07);
+  color: #e4e9ef;
+}
+
+.persona-option > div:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.persona-option strong {
+  color: #dfe5ed;
+  font-size: 11px;
+}
+
+.persona-option span {
+  color: #737f92;
+  font-size: 9px;
+}
+
+.persona-option > svg {
+  color: #5edca5;
+}
+
+.avatar.mini {
+  width: 31px;
+  height: 31px;
+  font-size: 9px;
+}
+
+.poster-post-block + .poster-post-block {
+  margin-top: 45px;
+}
+
+.empty-applicants {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #f5b942;
+}
+
+.empty-applicants div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty-applicants strong {
+  color: #dfe5ed;
+  font-size: 12px;
+}
+
+.empty-applicants span {
+  color: #778397;
+  font-size: 10px;
+}
+
+.post-composer {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid rgba(245,185,66,.22);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(245,185,66,.08), transparent 35%),
+    #0b1422;
+  box-shadow: 0 35px 100px rgba(0,0,0,.65);
+}
+
+.post-composer h2 {
+  margin: 14px 0 8px;
+}
+
+.post-composer > p {
+  margin: 0 0 22px;
+  color: #7f8a9d;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.post-composer label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.post-composer label > span {
+  color: #727e91;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.post-composer input,
+.post-composer select {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(255,255,255,.035);
+  color: #e3e8ef;
+  font: inherit;
+  font-size: 11px;
+}
+
+.post-composer input:focus,
+.post-composer select:focus {
+  border-color: rgba(245,185,66,.45);
+  box-shadow: 0 0 0 3px rgba(245,185,66,.06);
+}
+
+.post-composer select option {
+  background: #0b1422;
+  color: #e3e8ef;
+}
+
+.composer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.composer-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 12px;
+  border: 1px solid rgba(245,185,66,.12);
+  border-radius: 10px;
+  background: rgba(245,185,66,.035);
+  color: #f5b942;
+}
+
+.composer-preview div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.composer-preview strong {
+  color: #e0e5ec;
+  font-size: 10px;
+}
+
+.composer-preview span {
+  color: #7e899b;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.application-pending {
+  cursor: default;
+}
+
+@media (max-width: 650px) {
+  .persona-menu {
+    right: -5px;
+    width: 260px;
+  }
+
+  .composer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .post-composer {
+    padding: 22px;
+  }
+}
+
+/* =========================================================
+   FINAL MULTI-ROLE POSTING MODEL
+   ========================================================= */
+.my-posts-empty {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.poster-request .pill-green {
+  border-color: rgba(98,221,166,.25);
+}
+
+.own-mission-note {
+  margin-top: 12px;
+  color: #7c899c;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   TRUE MULTI-ROLE MARKETPLACE + FORGE PREVIEW
+   ========================================================= */
+
+.forge-preview-modal {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid rgba(245,185,66,.22);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #101c2d, #08111e);
+  box-shadow: 0 30px 90px rgba(0,0,0,.55), 0 0 50px rgba(245,185,66,.05);
+}
+
+.forge-preview-modal .modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 50%;
+  color: #9ba6b8;
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+}
+
+.forge-preview-modal .modal-close:hover {
+  color: #f5b942;
+  border-color: rgba(245,185,66,.3);
+}
+
+.forge-preview-top {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding-right: 40px;
+}
+
+.forge-preview-top h2 {
+  margin: 4px 0 6px;
+}
+
+.forge-preview-top p:last-child {
+  margin: 0;
+  color: #7f8b9d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.forge-preview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.forge-preview-stats > div {
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+
+.forge-preview-stats span {
+  display: block;
+  color: #6f7b8e;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+
+.forge-preview-stats strong {
+  display: block;
+  margin-top: 5px;
+  color: #f5b942;
+  font-family: var(--font-cinzel), serif;
+  font-size: 21px;
+}
+
+.forge-preview-section {
+  margin-bottom: 18px;
+}
+
+.forge-proof-card {
+  display: flex;
+  gap: 11px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid rgba(98,221,166,.13);
+  border-radius: 10px;
+  background: rgba(98,221,166,.035);
+  color: #62dda6;
+}
+
+.forge-proof-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.forge-proof-card strong {
+  color: #dfe7e2;
+  font-size: 11px;
+}
+
+.forge-proof-card span {
+  color: #7f8c84;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+/* Everyone is both sides of the marketplace */
+.persona-menu-title::after {
+  content: ' · EVERYONE CAN POST + APPLY';
+  color: #f5b942;
+}
+
+@media (max-width: 560px) {
+  .forge-preview-modal {
+    padding: 20px;
+  }
+
+  .forge-preview-top {
+    align-items: flex-start;
+  }
+
+  .forge-preview-stats {
+    grid-template-columns: 1fr;
+  }
+}
