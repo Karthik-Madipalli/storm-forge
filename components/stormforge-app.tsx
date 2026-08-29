@@ -299,6 +299,15 @@ export default function StormforgeApp() {
     notify('Mission added to your active forge.')
   }
 
+  const openWorkspace = (mission: (typeof missions)[number]) => {
+  setWorkspaceStep(
+    completed.includes(mission.id) ? 'reviewed' : 'working'
+  )
+
+  setSelected(null)
+  setView('workspace')
+  }
+
   return (
     <div className="app-shell">
       {/* =====================================================
@@ -475,13 +484,18 @@ export default function StormforgeApp() {
             <WorkView
               applied={applied}
               onOpen={setSelected}
+              onOpenWorkspace={openWorkspace}
               onView={setView}
             />
           )}
 
-          {view === 'workspace' && selected && (
+          {view === 'workspace' && (
             <WorkspaceView
-              mission={selected}
+              mission={
+                selected ??
+                missions.find((mission) => applied.includes(mission.id)) ??
+                missions[0]
+              }
               step={workspaceStep}
               onStepChange={setWorkspaceStep}
               onComplete={() => {
@@ -640,12 +654,7 @@ export default function StormforgeApp() {
               className="primary-button full"
               onClick={() => {
                 if (applied.includes(selected.id)) {
-                  setWorkspaceStep(
-                    completed.includes(selected.id)
-                      ? 'reviewed'
-                      : 'working'
-                  )
-                  setView('workspace')
+                  openWorkspace(selected)
                 } else {
                   apply(selected.id)
                 }
@@ -1102,10 +1111,12 @@ function MissionBoard({
 function WorkView({
   applied,
   onOpen,
+  onOpenWorkspace,
   onView,
 }: {
   applied: number[]
   onOpen: (m: (typeof missions)[number]) => void
+  onOpenWorkspace: (m: (typeof missions)[number]) => void
   onView: (v: string) => void
 }) {
   const active = missions.filter((m) =>
@@ -1145,7 +1156,7 @@ function WorkView({
             <button
               className="work-row"
               key={mission.id}
-              onClick={() => onOpen(mission)}
+              onClick={() => onOpenWorkspace(mission)}
             >
               <div className="work-status">
                 <span className="status-pulse" />
