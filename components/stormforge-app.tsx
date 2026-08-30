@@ -273,7 +273,7 @@ export default function StormforgeApp({ user, initialMissions = [] }: { user: { 
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [view, setView] = useState('home')
-  const [profile, setProfile] = useState('Ananya')
+  const [profile, setProfile] = useState(user.name || 'Maker')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [selected, setSelected] = useState<(typeof missions)[number] | null>(null)
@@ -282,7 +282,7 @@ export default function StormforgeApp({ user, initialMissions = [] }: { user: { 
   })
   const [acceptedByMission, setAcceptedByMission] = useState<Record<number, string>>({})
   const [completed, setCompleted] = useState<number[]>([])
-  const [forgeScores, setForgeScores] = useState<Record<string, number>>({ ananya: 92, rahul: 87, meera: 84 })
+  const [forgeScores, setForgeScores] = useState<Record<string, number>>({})
   const [workspaceStep, setWorkspaceStep] = useState<'working' | 'submitted' | 'reviewed'>('working')
   const [toast, setToast] = useState('')
   const [showMenu, setShowMenu] = useState(false)
@@ -1676,10 +1676,10 @@ function ForgeView({
         <div className="profile-identity">
           <p className="kicker">THE MAKER PROFILE</p>
 
-          <h1>{profile === 'Ananya' ? 'Ananya Sharma' : profile === 'Rahul' ? 'Rahul Kumar' : profile === 'Meera' ? 'Meera Nair' : 'Campus Arts Collective'}</h1>
+          <h1>{user.name || 'Maker'}</h1>
 
           <p>
-            Product designer · NIT Trichy · Chennai, India
+            {user.email} · Stormforge maker
           </p>
 
           <div className="tag-row">
