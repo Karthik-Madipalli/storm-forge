@@ -1,6 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { signOut } from '@/lib/auth-client'
+import { applyToMission, createMission } from '@/app/actions/stormforge'
 import {
   Bell,
   BriefcaseBusiness,
@@ -266,9 +269,11 @@ function Stat({
   )
 }
 
-export default function StormforgeApp() {
+export default function StormforgeApp({ user, initialMissions = [], initialProfile }: { user: { id?: string; name: string; email: string }; initialMissions?: Array<{ id: string; title: string; summary: string; client: string; category: string; reward: number; userId?: string }>; initialProfile?: { walletBalance?: number; forgeScore?: number } | null }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [view, setView] = useState('home')
-  const [profile, setProfile] = useState('Ananya')
+  const [profile, setProfile] = useState(user.name || 'Maker')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [selected, setSelected] = useState<(typeof missions)[number] | null>(null)
@@ -277,7 +282,7 @@ export default function StormforgeApp() {
   })
   const [acceptedByMission, setAcceptedByMission] = useState<Record<number, string>>({})
   const [completed, setCompleted] = useState<number[]>([])
-  const [forgeScores, setForgeScores] = useState<Record<string, number>>({ ananya: 92, rahul: 87, meera: 84 })
+  const [forgeScores, setForgeScores] = useState<Record<string, number>>({})
   const [workspaceStep, setWorkspaceStep] = useState<'working' | 'submitted' | 'reviewed'>('working')
   const [toast, setToast] = useState('')
   const [showMenu, setShowMenu] = useState(false)
@@ -285,8 +290,19 @@ export default function StormforgeApp() {
   const [postedMissions, setPostedMissions] = useState<(typeof missions)[number][]>([])
   const [selectedForgeProfile, setSelectedForgeProfile] = useState<string | null>(null)
 
-  const allMissions = useMemo(() => [...missions, ...postedMissions], [postedMissions])
-  const currentUserId = profile === 'Ananya' ? 'ananya' : profile === 'Rahul' ? 'rahul' : 'meera'
+  const persistedMissions = useMemo(() => initialMissions.map((mission) => ({
+    id: mission.id as unknown as number,
+    ownerId: mission.userId ?? 'network',
+    title: mission.title,
+    company: mission.client,
+    category: mission.category,
+    reward: mission.reward,
+    time: 'Flexible',
+    tags: ['Community', mission.category],
+    hot: false,
+  })), [initialMissions])
+  const allMissions = useMemo(() => [...missions, ...persistedMissions, ...postedMissions], [persistedMissions, postedMissions])
+  const currentUserId = user.id ?? user.email
   const forgeScore = forgeScores[currentUserId] ?? 80
   const applied = useMemo(
     () => allMissions.filter((mission) => (applicationsByMission[mission.id] ?? []).includes(currentUserId)).map((mission) => mission.id),
@@ -316,6 +332,14 @@ export default function StormforgeApp() {
   }
 
   const apply = (id: number) => {
+    startTransition(async () => {
+      try {
+        await applyToMission(String(id))
+      } catch {
+        notify('Could not save your application. Please try again.')
+        return
+      }
+    })
     const mission = allMissions.find((item) => item.id === id)
     if (mission?.ownerId === currentUserId) {
       notify('You posted this mission. Switch to another student to apply.')
@@ -352,8 +376,9 @@ export default function StormforgeApp() {
     notify(`${applicantName} selected. Mission workspace is now unlocked.`)
   }
 
-  const createPost = (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => {
-    const nextId = Math.max(...allMissions.map((mission) => mission.id)) + 1
+  const createPost = async (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => {
+    const saved = await createMission({ title: post.title, summary: `${post.title} mission`, category: post.category, reward: post.reward, time: post.time, tags: post.tags })
+    const nextId = saved.id as unknown as number
     const newMission = {
       id: nextId,
       title: post.title,
@@ -404,8 +429,8 @@ export default function StormforgeApp() {
           <div className="avatar">{profile[0]}</div>
 
           <div>
-            <strong>{profile}</strong>
-            <small>Forge score {forgeScore}</small>
+  <strong>{user.name || profile}</strong>
+  <small>{user.email}</small>
           </div>
 
           <MoreHorizontal size={17} className="dim" />
@@ -494,31 +519,33 @@ export default function StormforgeApp() {
                 <div className="avatar small">
                   {profile[0]}
                 </div>
-                <span>{profile}</span>
+                <span>{user.name || profile}</span>
                 <ChevronRight size={15} />
               </button>
 
               {showPersonaMenu && (
                 <div className="persona-menu">
-                  <div className="persona-menu-title">PROTOTYPE PERSONAS</div>
-                  {[
-                    ['Ananya', 'Student · Can post + apply'],
-                    ['Rahul', 'Student · Can post + apply'],
-                    ['Meera', 'Student · Can post + apply'],
-                  ].map(([name, role]) => (
-                    <button
-                      key={name}
-                      className={profile === name ? 'persona-option active' : 'persona-option'}
-                      onClick={() => switchPersona(name)}
-                    >
-                      <div className="avatar mini">{name[0]}</div>
-                      <div>
-                        <strong>{name}</strong>
-                        <span>{role}</span>
-                      </div>
-                      {profile === name && <ShieldCheck size={14} />}
-                    </button>
-                  ))}
+                  <div className="persona-menu-title">ACCOUNT</div>
+                  <div className="persona-option active">
+                    <div className="avatar mini">{(user.name || profile)[0]}</div>
+                    <div>
+                      <strong>{user.name || profile}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                    <ShieldCheck size={14} />
+                  </div>
+                  <button
+                    className="persona-option"
+                    disabled={isPending}
+                    onClick={async () => {
+                      await signOut()
+                      router.push('/sign-in')
+                      router.refresh()
+                    }}
+                  >
+                    <LockKeyhole size={15} />
+                    <div><strong>Sign out</strong><span>End this session</span></div>
+                  </button>
                 </div>
               )}
             </div>
@@ -612,10 +639,11 @@ export default function StormforgeApp() {
           )}
 
           {view === 'forge' && (
-            <ForgeView
-              profile={profile}
-              score={forgeScore}
-            />
+<ForgeView
+  profile={profile}
+  score={forgeScore}
+  user={user}
+  />
           )}
 
           {view === 'trust' && (
@@ -624,7 +652,7 @@ export default function StormforgeApp() {
             />
           )}
 
-          {view === 'wallet' && <WalletView />}
+          {view === 'wallet' && <WalletView walletBalance={initialProfile?.walletBalance ?? 0} />}
 
           {view === 'insights' && <InsightsView />}
 
@@ -1635,9 +1663,11 @@ function MyPostsView({
 function ForgeView({
   profile,
   score,
+  user,
 }: {
   profile: string
   score: number
+  user: { name: string; email: string }
 }) {
   return (
     <>
@@ -1649,10 +1679,10 @@ function ForgeView({
         <div className="profile-identity">
           <p className="kicker">THE MAKER PROFILE</p>
 
-          <h1>{profile === 'Ananya' ? 'Ananya Sharma' : profile === 'Rahul' ? 'Rahul Kumar' : profile === 'Meera' ? 'Meera Nair' : 'Campus Arts Collective'}</h1>
+          <h1>{user.name || 'Maker'}</h1>
 
           <p>
-            Product designer · NIT Trichy · Chennai, India
+            {user.email} · Stormforge maker
           </p>
 
           <div className="tag-row">
@@ -1972,7 +2002,8 @@ function ForgeView({
    WALLET
    ========================================================= */
 
-function WalletView() {
+function WalletView({ walletBalance = 0 }: { walletBalance?: number }) {
+  const balance = Math.max(0, walletBalance)
   return (
     <>
       <div className="page-title">
@@ -1993,9 +2024,9 @@ function WalletView() {
             AVAILABLE TO WITHDRAW
           </p>
 
-          <strong>₹14,250</strong>
+          <strong>₹{balance.toLocaleString('en-IN')}</strong>
 
-          <p>Last payout · 14 August 2026</p>
+          <p>{balance > 0 ? 'Available from completed missions' : 'No completed missions yet'}</p>
         </div>
 
         <CircleDollarSign size={38} />
@@ -2005,15 +2036,15 @@ function WalletView() {
         <Stat
           icon={TrendingUp}
           label="Season total"
-          value="₹18,450"
-          detail="Across 6 missions"
+          value={`₹${balance.toLocaleString('en-IN')}`}
+          detail={balance > 0 ? 'From completed missions' : 'No completed missions yet'}
         />
 
         <Stat
           icon={WalletCards}
           label="Pending release"
-          value="₹4,200"
-          detail="2 active missions"
+          value="₹0"
+          detail="No active payouts"
         />
 
         <Stat

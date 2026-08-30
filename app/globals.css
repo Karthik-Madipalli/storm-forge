@@ -1,6 +1,19 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+.auth-screen { min-height: 100svh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--background); }
+.auth-card { width: min(100%, 440px); border: 1px solid var(--border); background: var(--card); padding: 32px; box-shadow: 0 24px 80px color-mix(in srgb, var(--foreground) 12%, transparent); }
+.auth-card h1 { margin: 10px 0 8px; font-size: 32px; letter-spacing: -0.04em; }
+.auth-card > p { color: var(--muted-foreground); line-height: 1.5; }
+.auth-kicker { color: var(--gold); font: 700 11px/1.2 var(--font-geist-mono), monospace; letter-spacing: .12em; }
+.auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 28px; }
+.auth-form label { display: flex; flex-direction: column; gap: 7px; color: var(--foreground); font-size: 13px; font-weight: 600; }
+.auth-form input { width: 100%; border: 1px solid var(--border); background: var(--background); padding: 12px 13px; color: var(--foreground); outline: none; }
+.auth-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 20%, transparent); }
+.auth-error { color: #ef8f8f !important; font-size: 13px; }
+.auth-switch { margin-top: 24px; font-size: 13px; }
+.auth-switch a { color: var(--gold); font-weight: 700; }
+
 :root { color-scheme: dark; --background: #08111f; --foreground: #e9edf4; --card: #101c2d; --card-foreground: #e9edf4; --muted: #152337; --muted-foreground: #8795a9; --border: #22324a; --gold: #dba94e; --gold-soft: #f4cf7b; --green: #63c798; --radius: .75rem; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--background); color: var(--foreground); }
