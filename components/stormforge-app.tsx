@@ -639,10 +639,11 @@ export default function StormforgeApp({ user, initialMissions = [] }: { user: { 
           )}
 
           {view === 'forge' && (
-            <ForgeView
-              profile={profile}
-              score={forgeScore}
-            />
+<ForgeView
+  profile={profile}
+  score={forgeScore}
+  user={user}
+  />
           )}
 
           {view === 'trust' && (
@@ -1662,9 +1663,11 @@ function MyPostsView({
 function ForgeView({
   profile,
   score,
+  user,
 }: {
   profile: string
   score: number
+  user: { name: string; email: string }
 }) {
   return (
     <>
