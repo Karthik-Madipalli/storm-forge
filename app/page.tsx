@@ -8,5 +8,5 @@ export default async function Page() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect('/sign-in')
   const data = await getStormforgeData()
-  return <StormforgeApp user={session.user} initialMissions={data.missions} />
+  return <StormforgeApp user={session.user} initialMissions={data.missions} initialProfile={data.profile} />
 }

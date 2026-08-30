@@ -269,7 +269,7 @@ function Stat({
   )
 }
 
-export default function StormforgeApp({ user, initialMissions = [] }: { user: { id?: string; name: string; email: string }; initialMissions?: Array<{ id: string; title: string; summary: string; client: string; category: string; reward: number; userId?: string }> }) {
+export default function StormforgeApp({ user, initialMissions = [], initialProfile }: { user: { id?: string; name: string; email: string }; initialMissions?: Array<{ id: string; title: string; summary: string; client: string; category: string; reward: number; userId?: string }>; initialProfile?: { walletBalance?: number; forgeScore?: number } | null }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [view, setView] = useState('home')
@@ -652,7 +652,7 @@ export default function StormforgeApp({ user, initialMissions = [] }: { user: { 
             />
           )}
 
-          {view === 'wallet' && <WalletView />}
+          {view === 'wallet' && <WalletView walletBalance={initialProfile?.walletBalance ?? 0} />}
 
           {view === 'insights' && <InsightsView />}
 
@@ -2002,7 +2002,8 @@ function ForgeView({
    WALLET
    ========================================================= */
 
-function WalletView() {
+function WalletView({ walletBalance = 0 }: { walletBalance?: number }) {
+  const balance = Math.max(0, walletBalance)
   return (
     <>
       <div className="page-title">
@@ -2023,9 +2024,9 @@ function WalletView() {
             AVAILABLE TO WITHDRAW
           </p>
 
-          <strong>₹14,250</strong>
+          <strong>₹{balance.toLocaleString('en-IN')}</strong>
 
-          <p>Last payout · 14 August 2026</p>
+          <p>{balance > 0 ? 'Available from completed missions' : 'No completed missions yet'}</p>
         </div>
 
         <CircleDollarSign size={38} />
@@ -2035,15 +2036,15 @@ function WalletView() {
         <Stat
           icon={TrendingUp}
           label="Season total"
-          value="₹18,450"
-          detail="Across 6 missions"
+          value={`₹${balance.toLocaleString('en-IN')}`}
+          detail={balance > 0 ? 'From completed missions' : 'No completed missions yet'}
         />
 
         <Stat
           icon={WalletCards}
           label="Pending release"
-          value="₹4,200"
-          detail="2 active missions"
+          value="₹0"
+          detail="No active payouts"
         />
 
         <Stat
