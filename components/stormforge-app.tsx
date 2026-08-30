@@ -1,6 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { signOut } from '@/lib/auth-client'
+import { applyToMission } from '@/app/actions/stormforge'
 import {
   Bell,
   BriefcaseBusiness,
@@ -266,7 +269,9 @@ function Stat({
   )
 }
 
-export default function StormforgeApp() {
+export default function StormforgeApp({ user }: { user: { name: string; email: string } }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [view, setView] = useState('home')
   const [profile, setProfile] = useState('Ananya')
   const [query, setQuery] = useState('')
@@ -316,6 +321,14 @@ export default function StormforgeApp() {
   }
 
   const apply = (id: number) => {
+    startTransition(async () => {
+      try {
+        await applyToMission(String(id))
+      } catch {
+        notify('Could not save your application. Please try again.')
+        return
+      }
+    })
     const mission = allMissions.find((item) => item.id === id)
     if (mission?.ownerId === currentUserId) {
       notify('You posted this mission. Switch to another student to apply.')
@@ -404,8 +417,8 @@ export default function StormforgeApp() {
           <div className="avatar">{profile[0]}</div>
 
           <div>
-            <strong>{profile}</strong>
-            <small>Forge score {forgeScore}</small>
+  <strong>{user.name || profile}</strong>
+  <small>{user.email}</small>
           </div>
 
           <MoreHorizontal size={17} className="dim" />
@@ -494,31 +507,33 @@ export default function StormforgeApp() {
                 <div className="avatar small">
                   {profile[0]}
                 </div>
-                <span>{profile}</span>
+                <span>{user.name || profile}</span>
                 <ChevronRight size={15} />
               </button>
 
               {showPersonaMenu && (
                 <div className="persona-menu">
-                  <div className="persona-menu-title">PROTOTYPE PERSONAS</div>
-                  {[
-                    ['Ananya', 'Student · Can post + apply'],
-                    ['Rahul', 'Student · Can post + apply'],
-                    ['Meera', 'Student · Can post + apply'],
-                  ].map(([name, role]) => (
-                    <button
-                      key={name}
-                      className={profile === name ? 'persona-option active' : 'persona-option'}
-                      onClick={() => switchPersona(name)}
-                    >
-                      <div className="avatar mini">{name[0]}</div>
-                      <div>
-                        <strong>{name}</strong>
-                        <span>{role}</span>
-                      </div>
-                      {profile === name && <ShieldCheck size={14} />}
-                    </button>
-                  ))}
+                  <div className="persona-menu-title">ACCOUNT</div>
+                  <div className="persona-option active">
+                    <div className="avatar mini">{(user.name || profile)[0]}</div>
+                    <div>
+                      <strong>{user.name || profile}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                    <ShieldCheck size={14} />
+                  </div>
+                  <button
+                    className="persona-option"
+                    disabled={isPending}
+                    onClick={async () => {
+                      await signOut()
+                      router.push('/sign-in')
+                      router.refresh()
+                    }}
+                  >
+                    <LockKeyhole size={15} />
+                    <div><strong>Sign out</strong><span>End this session</span></div>
+                  </button>
                 </div>
               )}
             </div>

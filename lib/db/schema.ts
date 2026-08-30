@@ -1,7 +1,4 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core'
-
-// --- Better Auth required tables -------------------------------------------
-// Column names are camelCase to match Better Auth's defaults. Do not rename.
+import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -21,18 +18,14 @@ export const session = pgTable('session', {
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   ipAddress: text('ipAddress'),
   userAgent: text('userAgent'),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
 })
 
 export const account = pgTable('account', {
   id: text('id').primaryKey(),
   accountId: text('accountId').notNull(),
   providerId: text('providerId').notNull(),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
   accessToken: text('accessToken'),
   refreshToken: text('refreshToken'),
   idToken: text('idToken'),
@@ -53,27 +46,41 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updatedAt').defaultNow(),
 })
 
-// --- App tables ------------------------------------------------------------
-// Add your app tables below. Always include a plain `userId` column so queries
-// can be scoped per user — the security model depends on this column existing,
-// not on a foreign key. Do NOT add a foreign key constraint
-// (`.references(() => user.id, ...)`) unless the user explicitly asks for
-// foreign keys or referential integrity; FK constraints make iterating on the
-// schema harder.
-//
-// Example:
-//
-// import { serial } from "drizzle-orm/pg-core"
-//
-// export const todos = pgTable("todos", {
-//   id: serial("id").primaryKey(),
-//   userId: text("userId").notNull(),
-//   title: text("title").notNull(),
-//   completed: boolean("completed").notNull().default(false),
-//   createdAt: timestamp("createdAt").notNull().defaultNow(),
-// })
-//
-// If the user asks for foreign keys, add the reference back in:
-//   userId: text("userId")
-//     .notNull()
-//     .references(() => user.id, { onDelete: "cascade" }),
+export const missions = pgTable('missions', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  summary: text('summary').notNull(),
+  client: text('client').notNull(),
+  category: text('category').notNull(),
+  reward: integer('reward').notNull(),
+  status: text('status').notNull().default('open'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const missionApplications = pgTable('missionApplications', {
+  id: text('id').primaryKey(),
+  missionId: text('missionId').notNull(),
+  userId: text('userId').notNull(),
+  status: text('status').notNull().default('pending'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const profiles = pgTable('profiles', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  bio: text('bio').notNull().default(''),
+  skills: text('skills').notNull().default(''),
+  forgeScore: integer('forgeScore').notNull().default(420),
+  walletBalance: integer('walletBalance').notNull().default(0),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+})
+
+export const notifications = pgTable('notifications', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  read: boolean('read').notNull().default(false),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
