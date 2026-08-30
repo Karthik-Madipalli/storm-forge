@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth-client'
-import { applyToMission } from '@/app/actions/stormforge'
+import { applyToMission, createMission } from '@/app/actions/stormforge'
 import {
   Bell,
   BriefcaseBusiness,
@@ -269,7 +269,7 @@ function Stat({
   )
 }
 
-export default function StormforgeApp({ user }: { user: { name: string; email: string } }) {
+export default function StormforgeApp({ user, initialMissions = [] }: { user: { id?: string; name: string; email: string }; initialMissions?: Array<{ id: string; title: string; summary: string; client: string; category: string; reward: number; userId?: string }> }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [view, setView] = useState('home')
@@ -290,8 +290,19 @@ export default function StormforgeApp({ user }: { user: { name: string; email: s
   const [postedMissions, setPostedMissions] = useState<(typeof missions)[number][]>([])
   const [selectedForgeProfile, setSelectedForgeProfile] = useState<string | null>(null)
 
-  const allMissions = useMemo(() => [...missions, ...postedMissions], [postedMissions])
-  const currentUserId = profile === 'Ananya' ? 'ananya' : profile === 'Rahul' ? 'rahul' : 'meera'
+  const persistedMissions = useMemo(() => initialMissions.map((mission) => ({
+    id: mission.id as unknown as number,
+    ownerId: mission.userId ?? 'network',
+    title: mission.title,
+    company: mission.client,
+    category: mission.category,
+    reward: mission.reward,
+    time: 'Flexible',
+    tags: ['Community', mission.category],
+    hot: false,
+  })), [initialMissions])
+  const allMissions = useMemo(() => [...missions, ...persistedMissions, ...postedMissions], [persistedMissions, postedMissions])
+  const currentUserId = user.id ?? user.email
   const forgeScore = forgeScores[currentUserId] ?? 80
   const applied = useMemo(
     () => allMissions.filter((mission) => (applicationsByMission[mission.id] ?? []).includes(currentUserId)).map((mission) => mission.id),
@@ -365,8 +376,9 @@ export default function StormforgeApp({ user }: { user: { name: string; email: s
     notify(`${applicantName} selected. Mission workspace is now unlocked.`)
   }
 
-  const createPost = (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => {
-    const nextId = Math.max(...allMissions.map((mission) => mission.id)) + 1
+  const createPost = async (post: { title: string; reward: number; time: string; category: string; tags: string[] }) => {
+    const saved = await createMission({ title: post.title, summary: `${post.title} mission`, category: post.category, reward: post.reward, time: post.time, tags: post.tags })
+    const nextId = saved.id as unknown as number
     const newMission = {
       id: nextId,
       title: post.title,

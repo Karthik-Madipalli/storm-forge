@@ -49,6 +49,7 @@ export const verification = pgTable('verification', {
 
 export const missions = pgTable('missions', {
   id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
   title: text('title').notNull(),
   summary: text('summary').notNull(),
   client: text('client').notNull(),

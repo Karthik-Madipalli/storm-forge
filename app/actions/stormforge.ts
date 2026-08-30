@@ -30,6 +30,23 @@ export async function getStormforgeData() {
   return { user, profile: profile[0] ?? null, applications, alerts, missions: openMissions }
 }
 
+export async function createMission(input: { title: string; summary: string; category: string; reward: number; time: string; tags: string[] }) {
+  const user = await requireUser()
+  const missionId = crypto.randomUUID()
+  await db.insert(missions).values({
+    id: missionId,
+    userId: user.id,
+    title: input.title,
+    summary: input.summary,
+    client: `${user.name} · Student request`,
+    category: input.category,
+    reward: input.reward,
+    status: 'open',
+  })
+  revalidatePath('/')
+  return { id: missionId }
+}
+
 export async function applyToMission(missionId: string) {
   const user = await requireUser()
   const mission = await db.select({ id: missions.id }).from(missions).where(and(eq(missions.id, missionId), eq(missions.status, 'open'))).limit(1)
